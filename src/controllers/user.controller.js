@@ -1,3 +1,4 @@
+import fs from "fs";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
@@ -22,11 +23,14 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const avatarLocalPath = req.files?.avatar?.[0]?.path;
-  // const coverImageLocalPath = req.files?.coverImage?.[0]?.path;
-
   let coverImageLocalPath;
-  if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
-    coverImageLocalPath = req.files.coverImage[0].path
+
+  if (
+    req.files &&
+    Array.isArray(req.files.coverImage) &&
+    req.files.coverImage.length > 0
+  ) {
+    coverImageLocalPath = req.files.coverImage[0].path;
   }
 
   if (!avatarLocalPath) {
@@ -37,6 +41,14 @@ const registerUser = asyncHandler(async (req, res) => {
   const coverImage = coverImageLocalPath
     ? await uploadOnCloudinary(coverImageLocalPath)
     : null;
+
+  // Delete the local avatar file after successful upload
+  fs.unlinkSync(avatarLocalPath);
+
+  // Delete the local cover image file after successful upload (if it exists)
+  if (coverImageLocalPath) {
+    fs.unlinkSync(coverImageLocalPath);
+  }
 
   const user = await User.create({
     fullName,
